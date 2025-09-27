@@ -1,4 +1,4 @@
-import type { CloneOptions, DeepPartial, JsonValue, Validators } from './types';
+import type { CloneOptions, DataShape, DeepPartial, JsonValue, StrictCreateInput, Validators } from './types';
 import { clone as cloneValue, compareByKeys, deepEqual, hashCode as hashOf, shallowEqual, stableStringify, toJSONStable } from './utils';
 
 type Constructor<T> = new (...args: any[]) => T;
@@ -6,9 +6,23 @@ type Constructor<T> = new (...args: any[]) => T;
 export abstract class DataClass {
   // Instance API delegates to static methods bound to constructor
 
-  static create<T extends typeof DataClass>(this: T, patch?: Partial<InstanceType<T>>): InstanceType<T> {
+  static create<T extends typeof DataClass>(this: T, patch?: Partial<DataShape<InstanceType<T>>>): InstanceType<T> {
     const instance = new (this as unknown as Constructor<InstanceType<T>>)();
     if (patch) Object.assign(instance, patch);
+    return Object.seal(instance);
+  }
+
+  static createStrict<T extends typeof DataClass>(this: T, patch: StrictCreateInput<DataShape<InstanceType<T>>>): InstanceType<T> {
+    const instance = new (this as unknown as Constructor<InstanceType<T>>)();
+    const descriptor = getRequiredOptionalKeys(instance as Record<string, unknown>);
+
+    for (const key of descriptor.required) {
+      if (!(key in patch)) {
+        throw new TypeError(`Field "${key}" must be provided`);
+      }
+    }
+
+    Object.assign(instance, patch);
     return Object.seal(instance);
   }
 
@@ -82,8 +96,11 @@ export abstract class DataClass {
   }
 
   // Instance methods proxy to static for ergonomic DX
-  create<T extends this>(patch?: Partial<T>): T {
+  create<T extends this>(patch?: Partial<DataShape<T>>): T {
     return (this.constructor as any).create(patch);
+  }
+  createStrict<T extends this>(patch: StrictCreateInput<DataShape<T>>): T {
+    return (this.constructor as any).createStrict(patch);
   }
   copy<T extends this>(patch?: DeepPartial<T>, options?: CloneOptions): T {
     return (this.constructor as any).copy(this, patch, options);
@@ -133,6 +150,20 @@ function mergeDeep<T extends Record<string, any>>(base: T, patch: any): T {
     }
   }
   return base;
+}
+
+function getRequiredOptionalKeys(instance: Record<string, unknown>): { required: ReadonlyArray<string>; optional: ReadonlyArray<string> } {
+  const keys = Object.keys(instance);
+  const required: string[] = [];
+  const optional: string[] = [];
+  for (const key of keys) {
+    if (instance[key] === undefined) {
+      optional.push(key);
+    } else {
+      required.push(key);
+    }
+  }
+  return { required, optional };
 }
 
 

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { DataShape, StrictCreateInput } from '../src';
 import { DataClass } from '../src';
 
 class User extends DataClass {
@@ -13,6 +14,20 @@ describe('DataClass basics', () => {
     expect(u.name).toBe('Alice');
     expect(u.age).toBe(30);
     expect(u.email).toBeUndefined();
+  });
+
+  it('createStrict enforces required fields', () => {
+    const strict = User.createStrict({ name: 'Alice', age: 30 });
+    expect(strict.name).toBe('Alice');
+    expect(strict.age).toBe(30);
+
+    type StrictUserInput = StrictCreateInput<DataShape<User>>;
+    const validInput: StrictUserInput = { name: 'Alice', age: 1 };
+    expect(validInput.age).toBe(1);
+
+    // @ts-expect-error missing required field "age"
+    const invalidInput: StrictUserInput = { name: 'Alice' };
+    void invalidInput;
   });
 
   it('copy and update', () => {
