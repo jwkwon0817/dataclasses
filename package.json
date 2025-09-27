@@ -1,6 +1,6 @@
 {
   "name": "dataclasses",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "TypeScript data class library",
   "license": "MIT",
   "author": "",
@@ -20,6 +20,7 @@
     "dist"
   ],
   "scripts": {
+    "prepublishOnly": "pnpm build",
     "build": "tsup",
     "clean": "rm -rf dist",
     "dev": "tsup --watch",
