@@ -26,6 +26,28 @@ export abstract class DataClass {
     return Object.seal(instance);
   }
 
+  static from<T extends typeof DataClass, S extends Record<string, unknown>>(
+    this: T,
+    source: S,
+    overrides?: Partial<DataShape<InstanceType<T>>>
+  ): InstanceType<T> {
+    const merged = overrides ? { ...source, ...overrides } : source;
+    return this.create(merged as Partial<DataShape<InstanceType<T>>>);
+  }
+
+  static fromArray<T extends typeof DataClass, S extends Record<string, unknown>>(
+    this: T,
+    sources: ReadonlyArray<S>,
+    overrides?:
+      | Partial<DataShape<InstanceType<T>>>
+      | ((source: S, index: number) => Partial<DataShape<InstanceType<T>>> | undefined)
+  ): InstanceType<T>[] {
+    return sources.map((source, index) => {
+      const override = typeof overrides === 'function' ? overrides(source, index) : overrides;
+      return this.from(source, override);
+    });
+  }
+
   static copy<T extends typeof DataClass>(this: T, instance: InstanceType<T>, patch?: DeepPartial<InstanceType<T>>, options?: CloneOptions): InstanceType<T> {
     const base = options?.deep ? cloneValue(instance, { deep: true }) : { ...(instance as any) };
     const merged = patch ? mergeDeep(base, patch) : base;
@@ -112,6 +134,12 @@ export abstract class DataClass {
   clone<T extends this>(options?: CloneOptions): T {
     return (this.constructor as any).clone(this, options);
   }
+  pick<K extends Extract<keyof DataShape<this>, string>>(keys: ReadonlyArray<K>): Pick<DataShape<this>, K> {
+    return pickKeys(this as any, keys);
+  }
+  omit<K extends Extract<keyof DataShape<this>, string>>(keys: ReadonlyArray<K>): Omit<DataShape<this>, K> {
+    return omitKeys(this as any, keys);
+  }
   equals<T extends this>(other: T, deep: boolean = true): boolean {
     return (this.constructor as any).equals(this, other, deep);
   }
@@ -150,6 +178,27 @@ function mergeDeep<T extends Record<string, any>>(base: T, patch: any): T {
     }
   }
   return base;
+}
+
+function pickKeys<T extends Record<string, unknown>, K extends keyof T>(obj: T, keys: ReadonlyArray<K>): Pick<T, K> {
+  const result: Partial<T> = {};
+  for (const key of keys) {
+    if (key in obj) {
+      (result as any)[key] = obj[key];
+    }
+  }
+  return result as Pick<T, K>;
+}
+
+function omitKeys<T extends Record<string, unknown>, K extends keyof T>(obj: T, keys: ReadonlyArray<K>): Omit<T, K> {
+  const result: Partial<T> = {};
+  const exclude = new Set(keys as ReadonlyArray<keyof T>);
+  for (const key of Object.keys(obj) as Array<keyof T>) {
+    if (!exclude.has(key)) {
+      (result as any)[key] = obj[key];
+    }
+  }
+  return result as Omit<T, K>;
 }
 
 function getRequiredOptionalKeys(instance: Record<string, unknown>): { required: ReadonlyArray<string>; optional: ReadonlyArray<string> } {

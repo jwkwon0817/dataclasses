@@ -12,6 +12,10 @@ export type DataShape<T extends object> = Pick<T, NonFunctionPropertyNames<T>>;
 
 export type RequiredKeys<T> = { [K in keyof T]-?: undefined extends T[K] ? never : K }[keyof T];
 
+export type StrictRequiredKeys<T> = RequiredKeys<T>;
+
+export type OptionalKeys<T> = { [K in keyof T]-?: undefined extends T[K] ? K : never }[keyof T];
+
 export interface CloneOptions {
   deep?: boolean;
 }
@@ -31,8 +35,6 @@ export interface FieldSchema<T = unknown> {
 export interface ClassSchema<T> {
   fields: FieldSchema<any>[];
 }
-
-type StrictRequiredKeys<T> = RequiredKeys<T>;
 
 export type StrictCreateInput<T extends object> = [StrictRequiredKeys<T>] extends [never]
   ? Partial<T>

@@ -8,6 +8,14 @@ class User extends DataClass {
   email?: string;
 }
 
+class Invoice extends DataClass {
+  id: string = '';
+  customerName: string = '';
+  totalPrice: number = 0;
+  status?: string;
+  createdAt: Date = new Date(0);
+}
+
 describe('DataClass basics', () => {
   it('create and default values', () => {
     const u = User.create({ name: 'Alice', age: 30 });
@@ -28,6 +36,55 @@ describe('DataClass basics', () => {
     // @ts-expect-error missing required field "age"
     const invalidInput: StrictUserInput = { name: 'Alice' };
     void invalidInput;
+  });
+
+  it('from copies properties from plain object', () => {
+    const invoice = Invoice.from({ id: '1', customerName: 'ACME', totalPrice: 100, createdAt: new Date(2020, 0, 1) });
+    expect(invoice).toBeInstanceOf(Invoice);
+    expect(invoice.id).toBe('1');
+    expect(invoice.totalPrice).toBe(100);
+  });
+
+  it('from respects overrides', () => {
+    const invoice = Invoice.from(
+      { id: '1', customerName: 'ACME', totalPrice: 100, createdAt: new Date(2020, 0, 1) },
+      { totalPrice: 120 }
+    );
+    expect(invoice.totalPrice).toBe(120);
+  });
+
+  it('fromArray maps collection', () => {
+    const invoices = Invoice.fromArray([
+      { id: '1', customerName: 'ACME', totalPrice: 100, createdAt: new Date(2020, 0, 1) },
+      { id: '2', customerName: 'Globex', totalPrice: 200, createdAt: new Date(2020, 0, 2) },
+    ]);
+    expect(invoices).toHaveLength(2);
+    expect(invoices[1]?.id).toBe('2');
+  });
+
+  it('fromArray supports override factory', () => {
+    const invoices = Invoice.fromArray(
+      [
+        { id: '1', customerName: 'ACME', totalPrice: 100, createdAt: new Date(2020, 0, 1) },
+        { id: '2', customerName: 'Globex', totalPrice: 200, createdAt: new Date(2020, 0, 2) },
+      ],
+      (_, index) => ({ status: index === 0 ? 'open' : 'closed' })
+    );
+    expect(invoices[0]?.status).toBe('open');
+    expect(invoices[1]?.status).toBe('closed');
+  });
+
+  it('pick returns selected fields', () => {
+    const invoice = Invoice.from({ id: '1', customerName: 'ACME', totalPrice: 100, createdAt: new Date(2020, 0, 1) });
+    const summary = invoice.pick(['id', 'totalPrice']);
+    expect(summary).toEqual({ id: '1', totalPrice: 100 });
+  });
+
+  it('omit drops specified fields', () => {
+    const invoice = Invoice.from({ id: '1', customerName: 'ACME', totalPrice: 100, createdAt: new Date(2020, 0, 1) });
+    const rest = invoice.omit(['status']);
+    expect(rest).toMatchObject({ id: '1', customerName: 'ACME', totalPrice: 100, createdAt: new Date(2020, 0, 1) });
+    expect(rest).not.toHaveProperty('status');
   });
 
   it('copy and update', () => {
