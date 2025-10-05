@@ -39,7 +39,7 @@ describe('DataClass basics', () => {
   });
 
   it('from copies properties from plain object', () => {
-    const invoice = Invoice.from({ id: '1', customerName: 'ACME', totalPrice: 100, createdAt: new Date(2020, 0, 1) });
+    const invoice = Invoice.from({ id: '1', customerName: 'ACME', totalPrice: 100, createdAt: new Date(2020, 0, 1) } satisfies DataShape<Invoice>);
     expect(invoice).toBeInstanceOf(Invoice);
     expect(invoice.id).toBe('1');
     expect(invoice.totalPrice).toBe(100);
@@ -47,7 +47,7 @@ describe('DataClass basics', () => {
 
   it('from respects overrides', () => {
     const invoice = Invoice.from(
-      { id: '1', customerName: 'ACME', totalPrice: 100, createdAt: new Date(2020, 0, 1) },
+      { id: '1', customerName: 'ACME', totalPrice: 100, createdAt: new Date(2020, 0, 1) } satisfies DataShape<Invoice>,
       { totalPrice: 120 }
     );
     expect(invoice.totalPrice).toBe(120);
@@ -55,8 +55,8 @@ describe('DataClass basics', () => {
 
   it('fromArray maps collection', () => {
     const invoices = Invoice.fromArray([
-      { id: '1', customerName: 'ACME', totalPrice: 100, createdAt: new Date(2020, 0, 1) },
-      { id: '2', customerName: 'Globex', totalPrice: 200, createdAt: new Date(2020, 0, 2) },
+      { id: '1', customerName: 'ACME', totalPrice: 100, createdAt: new Date(2020, 0, 1) } satisfies DataShape<Invoice>,
+      { id: '2', customerName: 'Globex', totalPrice: 200, createdAt: new Date(2020, 0, 2) } satisfies DataShape<Invoice>,
     ]);
     expect(invoices).toHaveLength(2);
     expect(invoices[1]?.id).toBe('2');
@@ -65,8 +65,8 @@ describe('DataClass basics', () => {
   it('fromArray supports override factory', () => {
     const invoices = Invoice.fromArray(
       [
-        { id: '1', customerName: 'ACME', totalPrice: 100, createdAt: new Date(2020, 0, 1) },
-        { id: '2', customerName: 'Globex', totalPrice: 200, createdAt: new Date(2020, 0, 2) },
+        { id: '1', customerName: 'ACME', totalPrice: 100, createdAt: new Date(2020, 0, 1) } satisfies DataShape<Invoice>,
+        { id: '2', customerName: 'Globex', totalPrice: 200, createdAt: new Date(2020, 0, 2) } satisfies DataShape<Invoice>,
       ],
       (_, index) => ({ status: index === 0 ? 'open' : 'closed' })
     );
@@ -75,13 +75,13 @@ describe('DataClass basics', () => {
   });
 
   it('pick returns selected fields', () => {
-    const invoice = Invoice.from({ id: '1', customerName: 'ACME', totalPrice: 100, createdAt: new Date(2020, 0, 1) });
+    const invoice = Invoice.from({ id: '1', customerName: 'ACME', totalPrice: 100, createdAt: new Date(2020, 0, 1) } satisfies DataShape<Invoice>);
     const summary = invoice.pick(['id', 'totalPrice']);
     expect(summary).toEqual({ id: '1', totalPrice: 100 });
   });
 
   it('omit drops specified fields', () => {
-    const invoice = Invoice.from({ id: '1', customerName: 'ACME', totalPrice: 100, createdAt: new Date(2020, 0, 1) });
+    const invoice = Invoice.from({ id: '1', customerName: 'ACME', totalPrice: 100, createdAt: new Date(2020, 0, 1) } satisfies DataShape<Invoice>);
     const rest = invoice.omit(['status']);
     expect(rest).toMatchObject({ id: '1', customerName: 'ACME', totalPrice: 100, createdAt: new Date(2020, 0, 1) });
     expect(rest).not.toHaveProperty('status');

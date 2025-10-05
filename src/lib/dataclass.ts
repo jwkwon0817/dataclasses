@@ -26,16 +26,16 @@ export abstract class DataClass {
     return Object.seal(instance);
   }
 
-  static from<T extends typeof DataClass, S extends Record<string, unknown>>(
+  static from<T extends typeof DataClass, S extends Partial<DataShape<InstanceType<T>>>>(
     this: T,
     source: S,
     overrides?: Partial<DataShape<InstanceType<T>>>
   ): InstanceType<T> {
-    const merged = overrides ? { ...source, ...overrides } : source;
-    return this.create(merged as Partial<DataShape<InstanceType<T>>>);
+    const merged = { ...source, ...(overrides ?? {}) } as Partial<DataShape<InstanceType<T>>>;
+    return this.create(merged);
   }
 
-  static fromArray<T extends typeof DataClass, S extends Record<string, unknown>>(
+  static fromArray<T extends typeof DataClass, S extends Partial<DataShape<InstanceType<T>>>>(
     this: T,
     sources: ReadonlyArray<S>,
     overrides?:
